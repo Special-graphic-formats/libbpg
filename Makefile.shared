@@ -178,7 +178,10 @@ $(JCTVC_OBJS) src/jctvc_glue.o: CFLAGS+=-I$(PWD)/src/jctvc -Wno-sign-compare
 src/jctvc/libjctvc.a: $(JCTVC_OBJS)
 	$(AR) rcs $@ $^
 
-BPGENC_OBJS+=src/jctvc_glue.o src/jctvc/libjctvc.a
+libbpgenc.so.0: $(JCTVC_OBJS)
+	$(CC) -shared -Wall -Wl,-soname,$@ $^ -o $@ $(BPGENC_LIBS)
+
+BPGENC_OBJS+=src/jctvc_glue.o libbpgenc.so.0
 
 src/bpgenc.o: CFLAGS+=-DUSE_JCTVC
 endif # USE_JCTVC
@@ -211,13 +214,16 @@ src/bpgenc.o: CFLAGS+=-Wno-unused-but-set-variable
 libbpg.a: $(LIBBPG_OBJS) 
 	$(AR) rcs $@ $^
 
-bpgdec$(EXE): src/bpgdec.o libbpg.a
+libbpgdec.so.0: $(LIBBPG_OBJS)
+	$(CC) -shared -Wall -Wl,-soname,$@ $^ -o $@ $(BPGDEC_LIBS)
+
+bpgdec$(EXE): src/bpgdec.o libbpgdec.so.0
 	$(CC) $(LDFLAGS) -o $@ $^ $(BPGDEC_LIBS)
 
-bpgenc$(EXE): $(BPGENC_OBJS)
+bpgenc$(EXE): $(BPGENC_OBJS) libbpgenc.so.0
 	$(CXX) $(LDFLAGS) -o $@ $^ $(BPGENC_LIBS)
 
-bpgview$(EXE): src/bpgview.o libbpg.a
+bpgview$(EXE): src/bpgview.o libbpgdec.so.0
 	$(CC) $(LDFLAGS) -o $@ $^ $(BPGVIEW_LIBS)
 
 bpgdec.js: $(LIBBPG_JS_OBJS) src/post.js
@@ -242,7 +248,7 @@ CLEAN_DIRS=doc html src/libavcodec src/libavutil \
      src/jctvc/TLibCommon src/jctvc/libmd5
 
 clean:
-	rm -f $(PROGS) $(BPGENC_OBJS) $(LIBBPG_OBJS) $(JCTVC_OBJS) \
+	rm -f $(PROGS) libbpgenc.so.0 libbpgdec.so.0 $(BPGENC_OBJS) $(LIBBPG_OBJS) $(JCTVC_OBJS) \
           src/*.o *.a src/*.d src/*~ $(addsuffix /*.o, $(CLEAN_DIRS)) \
           $(addsuffix /*.d, $(CLEAN_DIRS)) $(addsuffix /*~, $(CLEAN_DIRS)) \
           $(addsuffix /*.a, $(CLEAN_DIRS))

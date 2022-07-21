@@ -5,6 +5,10 @@ CFLAGS+=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 PWD:=$(shell pwd)
 CFLAGS+=-I$(PWD)
 
+ifneq ($(shell uname -m), i386)
+    CFLAGS += -fPIC
+endif
+
 CXX=g++
 CXXFLAGS=$(CFLAGS)
 
